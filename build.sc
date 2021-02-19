@@ -9,16 +9,35 @@ import com.goyeau.mill.scalafix.StyleModule
 import io.github.davidgregory084.TpolecatModule
 import mill._
 import mill.scalalib._
+import mill.scalajslib._
 import mill.scalalib.publish.{Developer, License, PomSettings, VersionControl}
 
-object `kubernetes-client` extends Cross[KubernetesClientModule]("2.13.4", "2.12.12")
-class KubernetesClientModule(val crossScalaVersion: String)
+val scalaVersions = "2.13.4" :: "2.12.12" :: Nil
+
+object `kubernetes-client` extends Module {
+  object jvm extends Cross[JVMKubernetesClientModule](scalaVersions: _*)
+  object js extends Cross[JSKubernetesClientModule](scalaVersions: _*)
+}
+
+class JVMKubernetesClientModule(val crossScalaVersion: String)
+    extends KubernetesClientModule
+    with CrossScalaModule {
+}
+
+class JSKubernetesClientModule(val crossScalaVersion: String)
+    extends KubernetesClientModule
+    with ScalaJSModule {
+  override def scalaJSVersion = "1.5.0"
+}
+
+trait KubernetesClientModule
     extends CrossScalaModule
     with TpolecatModule
     with StyleModule
     with GitVersionedPublishModule
     with SwaggerModelGenerator {
 
+  override def artifactName = "kubernetes-client"
   override def scalacOptions = super.scalacOptions().filter(_ != "-Wunused:imports")
   override def ivyDeps =
     super.ivyDeps() ++ http4s ++ circe ++ circeYaml ++ bouncycastle ++ collectionCompat ++ logging
